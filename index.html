@@ -13,14 +13,49 @@
         <link rel="stylesheet" href="css/leaflet.photon.css">
         <link rel="stylesheet" href="css/leaflet-measure.css">
         <style>
+        /* MODIFICACIÓN: Ajuste para que el mapa ocupe toda la pantalla sin bordes blancos */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #ffffff;
+        }
         #map {
-            width: 1449px;
-            height: 802px;
+            width: 100vw;
+            height: 100vh;
+            padding: 0;
+            margin: 0;
         }
         </style>
         <title></title>
     </head>
     <body>
+
+        <!-- INICIO VENTANA DE BIENVENIDA -->
+        <div id="modalBienvenida" style="position: fixed; z-index: 99999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(43, 62, 88, 0.85); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(3px); font-family: Arial, sans-serif; color: white;">
+            <div style="background-color: transparent; padding: 20px 40px; max-width: 950px; width: 90%; text-align: center;">
+                <h2 style="margin-top: 0; font-size: 18px; font-weight: bold; text-shadow: 1px 1px 2px black;">¡Bienvenido al Geo Visor Geográfico Provincial!</h2>
+                <p style="font-size: 14px; margin-bottom: 20px; text-shadow: 1px 1px 2px black;">Esta plataforma es una herramienta digital diseñada para facilitar el acceso a la información territorial de nuestra provincia. Al acceder, tenga en cuenta lo siguiente:</p>
+                
+                <ul style="text-align: left; font-size: 13px; line-height: 1.6; margin-bottom: 25px; list-style-type: disc; padding-left: 20px; text-shadow: 1px 1px 2px black;">
+                    <li style="margin-bottom: 10px;"><b>Información Oficial:</b> Las capas correspondientes al Catastro y a los planes vigentes (PAT y PDU) reflejan estrictamente los documentos oficiales debidamente aprobados. A la fecha que son la OM 009-2018-MPMN OM 007-2025-MPMN OM 021-2025-MPMN</li>
+                    <li style="margin-bottom: 10px;"><b>Versión en Desarrollo:</b> Se incluye de manera informativa la propuesta del <b>PDU 2026 en elaboración</b> por el equipo técnico municipal, con fines exclusivamente de consulta y de carácter referencial.</li>
+                    <li style="margin-bottom: 10px;"><b>Uso Legal:</b> Toda la información gráfica aquí mostrada es de apoyo referencial. Para cualquier trámite, gestión o proceso oficial, los datos deberán ser validados y utilizados conforme a los documentos y ordenanzas Municipales que las aprueban.</li>
+                </ul>
+                
+                <p style="font-size: 13px; font-style: italic; margin-bottom: 25px; text-shadow: 1px 1px 2px black;">Al continuar, usted asume el conocimiento de estas condiciones.</p>
+                
+                <div style="text-align: right;">
+                    <button onclick="document.getElementById('modalBienvenida').style.display='none'" style="background-color: #5b9bd5; color: white; border: none; padding: 8px 25px; font-size: 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s;">
+                        Aceptar
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- FIN VENTANA DE BIENVENIDA -->
+
         <div id="map">
         </div>
         <script src="js/qgis2web_expressions.js"></script>
