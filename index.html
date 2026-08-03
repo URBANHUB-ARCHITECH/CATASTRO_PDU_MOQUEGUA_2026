@@ -13,7 +13,7 @@
         <link rel="stylesheet" href="css/leaflet.photon.css">
         <link rel="stylesheet" href="css/leaflet-measure.css">
         <style>
-        /* MODIFICACIÓN: Mapa a pantalla completa sin franjas blancas */
+        /* MODIFICACIÓN: Mapa a pantalla completa considerando la barra superior corporativa */
         html, body {
             margin: 0;
             padding: 0;
@@ -21,17 +21,82 @@
             height: 100%;
             overflow: hidden;
             background-color: #ffffff;
+            font-family: Arial, sans-serif;
         }
+        /* BARRA SUPERIOR INSTITUCIONAL ESTILO ARCGIS */
+        #header-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 45px;
+            background-color: #1b365d;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            box-sizing: border-box;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        #header-bar .title-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        #header-bar .subtitle-section {
+            font-size: 12px;
+            color: #d1d5db;
+            font-weight: normal;
+        }
+        #header-bar .info-section {
+            font-size: 11px;
+            color: #93c5fd;
+            display: flex;
+            gap: 15px;
+        }
+        /* AJUSTE DEL MAPA PARA QUE NO QUEDE OCULTO BAJO LA BARRA */
         #map {
+            position: absolute;
+            top: 45px;
+            left: 0;
             width: 100vw;
-            height: 100vh;
+            height: calc(100vh - 45px);
             padding: 0;
             margin: 0;
         }
+        /* ESTILO PARA EL BOTÓN DE CARGA KML/SHP */
+        .leaflet-control-upload {
+            background-color: white;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-radius: 4px;
+            padding: 6px;
+            cursor: pointer;
+            text-align: center;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+        }
+        .leaflet-control-upload:hover {
+            background-color: #f4f4f4;
+        }
         </style>
-        <title></title>
+        <title>CATASTRO PDU PAT MARISCAL NIETO</title>
     </head>
     <body>
+
+        <!-- BARRA SUPERIOR INSTITUCIONAL -->
+        <div id="header-bar">
+            <div class="title-section">
+                <span>CATASTRO PDU PAT MARISCAL NIETO</span>
+                <span class="subtitle-section">| GERENCIA DE DESARROLLO URBANO</span>
+            </div>
+            <div class="info-section">
+                <span>INF. SA OM 021 2025 MPMN</span>
+                <span>INF. SAM OM 007 2025 MPMN</span>
+            </div>
+        </div>
 
         <!-- INICIO VENTANA DE BIENVENIDA -->
         <div id="modalBienvenida" style="position: fixed; z-index: 99999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(43, 62, 88, 0.85); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(3px); font-family: Arial, sans-serif; color: white;">
@@ -58,6 +123,7 @@
 
         <div id="map">
         </div>
+        
         <script src="js/qgis2web_expressions.js"></script>
         <script src="js/leaflet.js"></script>
         <script src="js/L.Control.Layers.Tree.min.js"></script>
@@ -70,6 +136,9 @@
         <script src="js/labels.js"></script>
         <script src="js/leaflet.photon.js"></script>
         <script src="js/leaflet-measure.js"></script>
+        <!-- LIBRERIA AÑADIDA PARA IMPRESIÓN -->
+        <script src="https://cdn.jsdelivr.net/npm/leaflet-browser-print@1.0.6/dist/leaflet.browser.print.min.js"></script>
+        
         <script src="data/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1.js"></script>
         <script src="data/CATASTRO_MOQUEGUA_2026PDU_2025_S_2.js"></script>
         <script src="data/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3.js"></script>
@@ -168,6 +237,42 @@
         measureControl.addTo(map);
         document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
         document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
+        
+        // --- INICIO DE HERRAMIENTAS NUEVAS --- //
+        // 1. HERRAMIENTA DE IMPRESIÓN
+        L.control.browserPrint({position: 'topleft', title: 'Imprimir mapa'}).addTo(map);
+
+        // 2. HERRAMIENTA PARA AÑADIR DATOS LOCALES (KML / GeoJSON)
+        var uploadControl = L.control({position: 'topleft'});
+        uploadControl.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'leaflet-control-upload');
+            div.innerHTML = '<i class="fas fa-folder-open" title="Cargar archivo GeoJSON/KML local" style="font-size: 16px; color: #333;"></i>';
+            div.onclick = function() {
+                var input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.geojson,.json,.kml';
+                input.onchange = e => {
+                    var file = e.target.files[0];
+                    var reader = new FileReader();
+                    reader.readAsText(file, 'UTF-8');
+                    reader.onload = readerEvent => {
+                        var content = readerEvent.target.result;
+                        try {
+                            var geojsonLayer = L.geoJSON(JSON.parse(content)).addTo(map);
+                            map.fitBounds(geojsonLayer.getBounds());
+                            alert('Archivo cargado exitosamente al visor.');
+                        } catch(err) {
+                            alert('Error al leer el archivo. Asegúrese de que sea un formato válido.');
+                        }
+                    }
+                }
+                input.click();
+            };
+            return div;
+        };
+        uploadControl.addTo(map);
+        // --- FIN DE HERRAMIENTAS NUEVAS --- //
+
         var bounds_group = new L.featureGroup([]);
         function setBounds() {
         }
@@ -184,6 +289,21 @@
         });
         layer_GoogleSatellite_0;
         map.addLayer(layer_GoogleSatellite_0);
+
+        // MAPA BASE DE OSM AÑADIDO PARA LA SELECCIÓN
+        map.createPane('pane_OpenStreetMap_Base');
+        map.getPane('pane_OpenStreetMap_Base').style.zIndex = 399;
+        var layer_OpenStreetMap_Base = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            pane: 'pane_OpenStreetMap_Base',
+            opacity: 1.0,
+            attribution: '',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        // No añadimos el OSM al mapa por defecto, lo dejamos para que se active desde la leyenda.
+
         function pop_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
@@ -1839,6 +1959,8 @@
         });
         bounds_group.addLayer(layer_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6);
         map.addLayer(layer_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6);
+        
+        // --- SE HA AÑADIDO OPENSTREETMAP A LA LEYENDA (radioGroup: 'bm') ---
         var overlaysTree = [
             {label: '<img src="legend/CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6.png" /> CATASTRO_MOQUEGUA_2026 — mapa_base_limite_distrital', layer: layer_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6},
             {label: 'PDU_ESTRUCTURA_VIAL_2025<br /><table><tr><td style="text-align: center;"><img src="legend/PDU_ESTRUCTURA_VIAL_2025_5_NACIONAL0.png" /></td><td>NACIONAL</td></tr><tr><td style="text-align: center;"><img src="legend/PDU_ESTRUCTURA_VIAL_2025_5_EXPRESA1.png" /></td><td>EXPRESA</td></tr><tr><td style="text-align: center;"><img src="legend/PDU_ESTRUCTURA_VIAL_2025_5_ARTERIAL2.png" /></td><td>ARTERIAL</td></tr><tr><td style="text-align: center;"><img src="legend/PDU_ESTRUCTURA_VIAL_2025_5_COLECTORA3.png" /></td><td>COLECTORA</td></tr><tr><td style="text-align: center;"><img src="legend/PDU_ESTRUCTURA_VIAL_2025_5_LOCAL4.png" /></td><td>LOCAL</td></tr><tr><td style="text-align: center;"><img src="legend/PDU_ESTRUCTURA_VIAL_2025_5_AUXILIAR5.png" /></td><td>AUXILIAR</td></tr><tr><td style="text-align: center;"><img src="legend/PDU_ESTRUCTURA_VIAL_2025_5_6.png" /></td><td></td></tr></table>', layer: layer_PDU_ESTRUCTURA_VIAL_2025_5},
@@ -1846,14 +1968,11 @@
             {label: 'MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026<br /><table><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_E10.png" /></td><td>E1</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_E21.png" /></td><td>E2</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_E32.png" /></td><td>E3</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_H13.png" /></td><td>H1</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_H24.png" /></td><td>H2</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_I15.png" /></td><td>I1</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_I26.png" /></td><td>I2</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_I37.png" /></td><td>I3</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_OU8.png" /></td><td>OU</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_RU9.png" /></td><td>RU</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZA10.png" /></td><td>ZA</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZDAC11.png" /></td><td>ZDA-C</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZDAS12.png" /></td><td>ZDA-S</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZDBS13.png" /></td><td>ZDB-S</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZDMBS14.png" /></td><td>ZDMB-S</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZDMC15.png" /></td><td>ZDM-C</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZDMS16.png" /></td><td>ZDM-S</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZRENU17.png" /></td><td>ZRE-NU</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZREPA18.png" /></td><td>ZRE-PA</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZRERNM19.png" /></td><td>ZRE-RNM</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZRET20.png" /></td><td>ZRE-T</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZRETR21.png" /></td><td>ZRE-TR</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZREZM22.png" /></td><td>ZRE-ZM</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZREZPA23.png" /></td><td>ZRE-ZPA</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZRP24.png" /></td><td>ZRP</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_25.png" /></td><td></td></tr></table>', layer: layer_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3},
             {label: 'CATASTRO_MOQUEGUA_2026 — PDU_2025_S<br /><table><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_E10.png" /></td><td>E1</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_E21.png" /></td><td>E2</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_E32.png" /></td><td>E3</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_H13.png" /></td><td>H1</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_H24.png" /></td><td>H2</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_I15.png" /></td><td>I1</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_I26.png" /></td><td>I2</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_I37.png" /></td><td>I3</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_OU8.png" /></td><td>OU</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_RU9.png" /></td><td>RU</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZA10.png" /></td><td>ZA</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZDAC11.png" /></td><td>ZDA-C</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZDAS12.png" /></td><td>ZDA-S</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZDBS13.png" /></td><td>ZDB-S</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZDMBS14.png" /></td><td>ZDMB-S</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZDMC15.png" /></td><td>ZDM-C</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZDMS16.png" /></td><td>ZDM-S</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZRENU17.png" /></td><td>ZRE-NU</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZREPA18.png" /></td><td>ZRE-PA</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZRERNM19.png" /></td><td>ZRE-RNM</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZRET20.png" /></td><td>ZRE-T</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZRETR21.png" /></td><td>ZRE-TR</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZREZM22.png" /></td><td>ZRE-ZM</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZREZPA23.png" /></td><td>ZRE-ZPA</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZRP24.png" /></td><td>ZRP</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_25.png" /></td><td></td></tr></table>', layer: layer_CATASTRO_MOQUEGUA_2026PDU_2025_S_2},
             {label: 'CATASTRO_MOQUEGUA_2026 — pdu_zonificacion_2016<br /><table><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ARQUEOLOGICO0.png" /></td><td>ARQUEOLOGICO</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_CE1.png" /></td><td>CE</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_CV2.png" /></td><td>CV</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_CZ3.png" /></td><td>CZ</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_I14.png" /></td><td>I1</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_I1R5.png" /></td><td>I1R</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_I26.png" /></td><td>I2</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_I37.png" /></td><td>I3</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_OU8.png" /></td><td>OU</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_PU9.png" /></td><td>PU</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_RDA10.png" /></td><td>RDA</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_RDB11.png" /></td><td>RDB</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_RDM12.png" /></td><td>RDM</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZZRE0113.png" /></td><td>Z_ZRE-01</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZZRE0214.png" /></td><td>Z_ZRE-02</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZZRE0315.png" /></td><td>Z_ZRE-03</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZZRE0416.png" /></td><td>Z_ZRE-04</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZZRE0517.png" /></td><td>Z_ZRE-05</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZZRE0618.png" /></td><td>Z_ZRE-06</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZZRE0719.png" /></td><td>Z_ZRE-07</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZZRE0820.png" /></td><td>Z_ZRE-08</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZA21.png" /></td><td>ZA</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZPE22.png" /></td><td>ZPE</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZRP23.png" /></td><td>ZRP</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZSPCE24.png" /></td><td>ZSPC_E</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZSPCS25.png" /></td><td>ZSPC_S</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_26.png" /></td><td></td></tr></table>', layer: layer_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1},
-            {label: "Google Satellite", layer: layer_GoogleSatellite_0, radioGroup: 'bm' },]
+            {label: "OpenStreetMap Base", layer: layer_OpenStreetMap_Base, radioGroup: 'bm' },
+            {label: "Google Satellite", layer: layer_GoogleSatellite_0, radioGroup: 'bm' },
+        ]
+        
         var lay = L.control.layers.tree(null, overlaysTree,{
-            //namedToggle: true,
-            //selectorBack: false,
-            //closedSymbol: '&#8862; &#x1f5c0;',
-            //openedSymbol: '&#8863; &#x1f5c1;',
-            //collapseAll: 'Collapse all',
-            //expandAll: 'Expand all',
             collapsed: true,
         });
         lay.addTo(map);
