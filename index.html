@@ -94,7 +94,7 @@
             </div>
         </div>
 
-        <!-- VENTANA DE BIENVENIDA -->
+        <!-- INICIO VENTANA DE BIENVENIDA -->
         <div id="modalBienvenida" style="position: fixed; z-index: 99999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(43, 62, 88, 0.85); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(3px); font-family: Arial, sans-serif; color: white;">
             <div style="background-color: transparent; padding: 20px 40px; max-width: 950px; width: 90%; text-align: center;">
                 <h2 style="margin-top: 0; font-size: 18px; font-weight: bold; text-shadow: 1px 1px 2px black;">¡Bienvenido al Geo Visor Geográfico Provincial!</h2>
@@ -112,9 +112,10 @@
                 </div>
             </div>
         </div>
+        <!-- FIN VENTANA DE BIENVENIDA -->
 
         <div id="map"></div>
-        
+
         <script src="js/qgis2web_expressions.js"></script>
         <script src="js/leaflet.js"></script>
         <script src="js/L.Control.Layers.Tree.min.js"></script>
@@ -195,15 +196,16 @@
         document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
         document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
         
-        // HERRAMIENTAS NUEVAS BLINDADAS CON TRY-CATCH
+        // IMPRESIÓN (BLINDADA PARA NO ROMPER EL MAPA SI FALLA)
         try {
-            if (L.control.browserPrint) {
+            if (typeof L.control.browserPrint === 'function') {
                 L.control.browserPrint({position: 'topleft', title: 'Imprimir mapa'}).addTo(map);
             }
         } catch(e) {
-            console.warn("La herramienta de impresión no pudo cargar. Continuando con el mapa...", e);
+            console.warn("La herramienta de impresión no cargó correctamente.", e);
         }
 
+        // UPLOAD (BLINDADO)
         try {
             var uploadControl = L.control({position: 'topleft'});
             uploadControl.onAdd = function (map) {
@@ -265,22 +267,61 @@
             maxNativeZoom: 19
         });
 
-        // FORZAR EL ENCENDIDO DEL MAPA SATELITAL AHORA MISMO
+        layer_GoogleSatellite_0;
         map.addLayer(layer_GoogleSatellite_0);
 
-        // FUNCIONES DE CAPAS VECTORIALES (Vaciadas de los popups complejos para brevedad del lector web, pero manteniendo la estructura QGIS2WEB)
+        // --- INICIO DE RESTAURACIÓN DE ESTILOS ORIGINALES ---
+
+        // CAPA 1: ZONIFICACION 2016
         function pop_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1(feature, layer) {
             var popupContent = '<table>\
+                    <tr><td colspan="2">' + (feature.properties['fid'] !== null ? autolinker.link(String(feature.properties['fid']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['OBJECTID'] !== null ? autolinker.link(String(feature.properties['OBJECTID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['_h4_pdus_s'] !== null ? autolinker.link(String(feature.properties['_h4_pdus_s']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['KML_FOLDER'] !== null ? autolinker.link(String(feature.properties['KML_FOLDER']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['Shape_Length'] !== null ? autolinker.link(String(feature.properties['Shape_Length']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['Shape_Area'] !== null ? autolinker.link(String(feature.properties['Shape_Area']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
                     <tr><td colspan="2">' + (feature.properties['ZONIFICACION'] !== null ? autolinker.link(String(feature.properties['ZONIFICACION']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
                 </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
 			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_0(feature) {
-            return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(224,183,128,0.601)', interactive: true }
+            switch(String(feature.properties['ZONIFICACION'])) {
+                case 'ARQUEOLOGICO': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(224,183,128,0.601)', interactive: true }
+                case 'CE': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(74,161,233,0.601)', interactive: true }
+                case 'CV': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(226,129,226,0.601)', interactive: true }
+                case 'CZ': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(177,239,100,0.601)', interactive: true }
+                case 'I1': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(176,214,51,0.601)', interactive: true }
+                case 'I1R': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(102,178,201,0.601)', interactive: true }
+                case 'I2': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(33,55,222,0.601)', interactive: true }
+                case 'I3': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(205,207,113,0.601)', interactive: true }
+                case 'OU': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(142,95,234,0.601)', interactive: true }
+                case 'PU': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(188,14,236,0.601)', interactive: true }
+                case 'RDA': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(34,203,90,0.601)', interactive: true }
+                case 'RDB': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(228,188,45,0.601)', interactive: true }
+                case 'RDM': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(234,128,162,0.601)', interactive: true }
+                case 'Z_ZRE-01': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(88,209,183,0.601)', interactive: true }
+                case 'Z_ZRE-02': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(20,201,122,0.601)', interactive: true }
+                case 'Z_ZRE-03': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(95,206,44,0.601)', interactive: true }
+                case 'Z_ZRE-04': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(118,106,214,0.601)', interactive: true }
+                case 'Z_ZRE-05': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(216,14,122,0.601)', interactive: true }
+                case 'Z_ZRE-06': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(234,40,60,0.601)', interactive: true }
+                case 'Z_ZRE-07': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(162,88,223,0.601)', interactive: true }
+                case 'Z_ZRE-08': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(216,155,122,0.601)', interactive: true }
+                case 'ZA': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(90,235,74,0.601)', interactive: true }
+                case 'ZPE': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(109,234,234,0.601)', interactive: true }
+                case 'ZRP': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(86,203,100,0.601)', interactive: true }
+                case 'ZSPC_E': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(232,125,111,0.601)', interactive: true }
+                case 'ZSPC_S': return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(17,82,213,0.601)', interactive: true }
+                default: return { pane: 'pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(219,117,195,0.601)', interactive: true }
+            }
         }
-        
         map.createPane('pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1');
         map.getPane('pane_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1').style.zIndex = 401;
         var layer_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1 = new L.geoJson(json_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1, {
@@ -291,52 +332,277 @@
         });
         bounds_group.addLayer(layer_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1);
 
-        function pop_CATASTRO_MOQUEGUA_2026PDU_2025_S_2(feature, layer) {}
-        function style_CATASTRO_MOQUEGUA_2026PDU_2025_S_2_0(feature) { return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', interactive: true } }
+        // CAPA 2: PDU 2025 S
+        function pop_CATASTRO_MOQUEGUA_2026PDU_2025_S_2(feature, layer) {
+            var popupContent = '<table>\
+                    <tr><td colspan="2">' + (feature.properties['fid'] !== null ? autolinker.link(String(feature.properties['fid']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['OBJECTID'] !== null ? autolinker.link(String(feature.properties['OBJECTID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['ZONA'] !== null ? autolinker.link(String(feature.properties['ZONA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['ZONA_SIMB'] !== null ? autolinker.link(String(feature.properties['ZONA_SIMB']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['SUB_ZONA'] !== null ? autolinker.link(String(feature.properties['SUB_ZONA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['SUB_ZONA_S'] !== null ? autolinker.link(String(feature.properties['SUB_ZONA_S']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['FUENTE'] !== null ? autolinker.link(String(feature.properties['FUENTE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['SUB_FUENTE'] !== null ? autolinker.link(String(feature.properties['SUB_FUENTE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['Shape_Length'] !== null ? autolinker.link(String(feature.properties['Shape_Length']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['Shape_Area'] !== null ? autolinker.link(String(feature.properties['Shape_Area']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['OM_LINK'] !== null ? autolinker.link(String(feature.properties['OM_LINK']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['CLAS_SUE'] !== null ? autolinker.link(String(feature.properties['CLAS_SUE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['Layer'] !== null ? autolinker.link(String(feature.properties['Layer']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['Color'] !== null ? autolinker.link(String(feature.properties['Color']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['OM_LINK_2'] !== null ? autolinker.link(String(feature.properties['OM_LINK_2']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['LINK_PDU_SA'] !== null ? autolinker.link(String(feature.properties['LINK_PDU_SA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['LINK_PDU_SAM'] !== null ? autolinker.link(String(feature.properties['LINK_PDU_SAM']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_CATASTRO_MOQUEGUA_2026PDU_2025_S_2_0(feature) {
+            switch(String(feature.properties['SUB_ZONA_S'])) {
+                case 'E1': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(233,133,142,0.601)', interactive: true }
+                case 'E2': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(15,152,237,0.601)', interactive: true }
+                case 'E3': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(108,238,68,0.601)', interactive: true }
+                case 'H1': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(40,206,40,0.601)', interactive: true }
+                case 'H2': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(47,234,134,0.601)', interactive: true }
+                case 'I1': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(99,147,225,0.601)', interactive: true }
+                case 'I2': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(25,202,187,0.601)', interactive: true }
+                case 'I3': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(224,52,187,0.601)', interactive: true }
+                case 'OU': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(202,209,105,0.601)', interactive: true }
+                case 'RU': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(38,229,172,0.601)', interactive: true }
+                case 'ZA': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(178,78,208,0.601)', interactive: true }
+                case 'ZDA-C': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(234,128,67,0.601)', interactive: true }
+                case 'ZDA-S': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(91,83,201,0.601)', interactive: true }
+                case 'ZDB-S': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(191,240,78,0.601)', interactive: true }
+                case 'ZDMB-S': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(38,67,235,0.601)', interactive: true }
+                case 'ZDM-C': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(115,69,222,0.601)', interactive: true }
+                case 'ZDM-S': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(18,225,66,0.601)', interactive: true }
+                case 'ZRE-NU': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(205,68,143,0.601)', interactive: true }
+                case 'ZRE-PA': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(233,71,43,0.601)', interactive: true }
+                case 'ZRE-RNM': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(90,202,222,0.601)', interactive: true }
+                case 'ZRE-T': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(220,169,93,0.601)', interactive: true }
+                case 'ZRE-TR': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(211,76,119,0.601)', interactive: true }
+                case 'ZRE-ZM': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(236,208,69,0.601)', interactive: true }
+                case 'ZRE-ZPA': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(232,127,232,0.601)', interactive: true }
+                case 'ZRP': return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(132,202,67,0.601)', interactive: true }
+                default: return { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(166,115,211,0.601)', interactive: true }
+            }
+        }
         map.createPane('pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2');
         map.getPane('pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2').style.zIndex = 402;
-        var layer_CATASTRO_MOQUEGUA_2026PDU_2025_S_2 = new L.geoJson(json_CATASTRO_MOQUEGUA_2026PDU_2025_S_2, { pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2', style: style_CATASTRO_MOQUEGUA_2026PDU_2025_S_2_0 });
+        var layer_CATASTRO_MOQUEGUA_2026PDU_2025_S_2 = new L.geoJson(json_CATASTRO_MOQUEGUA_2026PDU_2025_S_2, {
+            interactive: true,
+            pane: 'pane_CATASTRO_MOQUEGUA_2026PDU_2025_S_2',
+            onEachFeature: pop_CATASTRO_MOQUEGUA_2026PDU_2025_S_2,
+            style: style_CATASTRO_MOQUEGUA_2026PDU_2025_S_2_0,
+        });
         bounds_group.addLayer(layer_CATASTRO_MOQUEGUA_2026PDU_2025_S_2);
 
-        function pop_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3(feature, layer) {}
-        function style_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_0(feature) { return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', interactive: true } }
+        // CAPA 3: MPMN PDU FISICO ESPACIAL ZONIFICACION 2026
+        function pop_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3(feature, layer) {
+            var popupContent = '<table>\
+                    <tr><td colspan="2">' + (feature.properties['OBJECTID'] !== null ? autolinker.link(String(feature.properties['OBJECTID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['ZONA'] !== null ? autolinker.link(String(feature.properties['ZONA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['ZONA_SIMB'] !== null ? autolinker.link(String(feature.properties['ZONA_SIMB']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['SUB_ZONA'] !== null ? autolinker.link(String(feature.properties['SUB_ZONA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['SUB_ZONA_S'] !== null ? autolinker.link(String(feature.properties['SUB_ZONA_S']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['FUENTE'] !== null ? autolinker.link(String(feature.properties['FUENTE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['SUB_FUENTE'] !== null ? autolinker.link(String(feature.properties['SUB_FUENTE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['OM_LINK'] !== null ? autolinker.link(String(feature.properties['OM_LINK']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['CLAS_SUE'] !== null ? autolinker.link(String(feature.properties['CLAS_SUE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['Shape_Length'] !== null ? autolinker.link(String(feature.properties['Shape_Length']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['Shape_Area'] !== null ? autolinker.link(String(feature.properties['Shape_Area']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_0(feature) {
+            switch(String(feature.properties['SUB_ZONA_S'])) {
+                case 'E1': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(221,137,227,0.601)', interactive: true }
+                case 'E2': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(120,196,234,0.601)', interactive: true }
+                case 'E3': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(189,110,223,0.601)', interactive: true }
+                case 'H1': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(235,74,95,0.601)', interactive: true }
+                case 'H2': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(186,139,236,0.601)', interactive: true }
+                case 'I1': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(86,156,214,0.601)', interactive: true }
+                case 'I2': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(86,156,214,0.601)', interactive: true }
+                case 'I3': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(86,156,214,0.601)', interactive: true }
+                case 'OU': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(197,200,199,0.601)', interactive: true }
+                case 'RU': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(235,154,47,0.601)', interactive: true }
+                case 'ZA': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(44,133,33,0.601)', interactive: true }
+                case 'ZDA-C': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(199,202,35,0.601)', interactive: true }
+                case 'ZDA-S': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(255,6,6,0.601)', interactive: true }
+                case 'ZDB-S': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(227,255,88,0.601)', interactive: true }
+                case 'ZDMB-S': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(249,255,206,0.601)', interactive: true }
+                case 'ZDM-C': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(255,247,26,0.601)', interactive: true }
+                case 'ZDM-S': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(255,247,26,0.601)', interactive: true }
+                case 'ZRE-NU': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(222,50,50,0.601)', interactive: true }
+                case 'ZRE-PA': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(255,0,0,0.601)', weight: 4.0, fill: true, fillOpacity: 1, fillColor: 'rgba(245,255,77,0.601)', interactive: true }
+                case 'ZRE-RNM': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(255,0,0,0.601)', interactive: true }
+                case 'ZRE-T': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(151,202,96,0.601)', interactive: true }
+                case 'ZRE-TR': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(209,109,146,0.601)', interactive: true }
+                case 'ZRE-ZM': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(132,224,147,0.601)', interactive: true }
+                case 'ZRE-ZPA': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(17,103,208,0.601)', interactive: true }
+                case 'ZRP': return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(27,255,62,0.601)', interactive: true }
+                default: return { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', opacity: 1, color: 'rgba(35,35,35,0.601)', weight: 1.0, fill: true, fillOpacity: 1, fillColor: 'rgba(72,206,126,0.601)', interactive: true }
+            }
+        }
         map.createPane('pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3');
         map.getPane('pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3').style.zIndex = 403;
-        var layer_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3 = new L.geoJson(json_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3, { pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3', style: style_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_0 });
+        var layer_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3 = new L.geoJson(json_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3, {
+            interactive: true,
+            pane: 'pane_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3',
+            onEachFeature: pop_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3,
+            style: style_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_0,
+        });
         bounds_group.addLayer(layer_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3);
         map.addLayer(layer_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3);
 
-        function pop_CATASTRO_ASOC_CATASTRADAS_4(feature, layer) {}
-        function style_CATASTRO_ASOC_CATASTRADAS_4_0() { return { pane: 'pane_CATASTRO_ASOC_CATASTRADAS_4', opacity: 1, color: 'rgba(22,50,21,1.0)', weight: 1.0, fillOpacity: 0, interactive: false } }
+        // CAPA 4: ASOCIACIONES CATASTRADAS
+        function pop_CATASTRO_ASOC_CATASTRADAS_4(feature, layer) {
+            var popupContent = '<table>\
+                    <tr><td colspan="2">' + (feature.properties['OBJECTID'] !== null ? autolinker.link(String(feature.properties['OBJECTID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['PARTIDA'] !== null ? autolinker.link(String(feature.properties['PARTIDA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['SHAPE_Length'] !== null ? autolinker.link(String(feature.properties['SHAPE_Length']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['SHAPE_Area'] !== null ? autolinker.link(String(feature.properties['SHAPE_Area']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['ASOCIACION'] !== null ? autolinker.link(String(feature.properties['ASOCIACION']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_CATASTRO_ASOC_CATASTRADAS_4_0() {
+            return {
+                pane: 'pane_CATASTRO_ASOC_CATASTRADAS_4',
+                opacity: 1,
+                color: 'rgba(22,50,21,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: false,
+            }
+        }
         map.createPane('pane_CATASTRO_ASOC_CATASTRADAS_4');
         map.getPane('pane_CATASTRO_ASOC_CATASTRADAS_4').style.zIndex = 404;
-        var layer_CATASTRO_ASOC_CATASTRADAS_4 = new L.geoJson(json_CATASTRO_ASOC_CATASTRADAS_4, { pane: 'pane_CATASTRO_ASOC_CATASTRADAS_4', style: style_CATASTRO_ASOC_CATASTRADAS_4_0 });
+        var layer_CATASTRO_ASOC_CATASTRADAS_4 = new L.geoJson(json_CATASTRO_ASOC_CATASTRADAS_4, {
+            interactive: false,
+            pane: 'pane_CATASTRO_ASOC_CATASTRADAS_4',
+            onEachFeature: pop_CATASTRO_ASOC_CATASTRADAS_4,
+            style: style_CATASTRO_ASOC_CATASTRADAS_4_0,
+        });
         bounds_group.addLayer(layer_CATASTRO_ASOC_CATASTRADAS_4);
         map.addLayer(layer_CATASTRO_ASOC_CATASTRADAS_4);
 
-        function pop_PDU_ESTRUCTURA_VIAL_2025_5(feature, layer) {}
-        function style_PDU_ESTRUCTURA_VIAL_2025_5_0(feature) { return { pane: 'pane_PDU_ESTRUCTURA_VIAL_2025_5', interactive: true } }
+        // CAPA 5: ESTRUCTURA VIAL 2025
+        function pop_PDU_ESTRUCTURA_VIAL_2025_5(feature, layer) {
+            var popupContent = '<table>\
+                    <tr><td colspan="2">' + (feature.properties['OBJECTID'] !== null ? autolinker.link(String(feature.properties['OBJECTID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['CLASIFICACION'] !== null ? autolinker.link(String(feature.properties['CLASIFICACION']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['calles_act'] !== null ? autolinker.link(String(feature.properties['calles_act']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['Shape_Length'] !== null ? autolinker.link(String(feature.properties['Shape_Length']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['COD_VIA'] !== null ? autolinker.link(String(feature.properties['COD_VIA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['TIPO_VIA'] !== null ? autolinker.link(String(feature.properties['TIPO_VIA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['NOM_VIA'] !== null ? autolinker.link(String(feature.properties['NOM_VIA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['SECCION'] !== null ? autolinker.link(String(feature.properties['SECCION']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['COD_SECCION'] !== null ? autolinker.link(String(feature.properties['COD_SECCION']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['CLAS_VIA'] !== null ? autolinker.link(String(feature.properties['CLAS_VIA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['CLAS_VIA_E'] !== null ? autolinker.link(String(feature.properties['CLAS_VIA_E']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_PDU_ESTRUCTURA_VIAL_2025_5_0(feature) {
+            switch(String(feature.properties['CLAS_VIA'])) {
+                case 'NACIONAL': return { pane: 'pane_PDU_ESTRUCTURA_VIAL_2025_5', opacity: 1, color: 'rgba(0,0,0,1.0)', dashArray: '32.0,16.0,8.0,16.0', lineCap: 'round', lineJoin: 'round', weight: 8.0, fillOpacity: 0, interactive: true }
+                case 'EXPRESA': return { pane: 'pane_PDU_ESTRUCTURA_VIAL_2025_5', opacity: 1, color: 'rgba(240,31,196,1.0)', dashArray: '', lineCap: 'round', lineJoin: 'round', weight: 8.0, fillOpacity: 0, interactive: true }
+                case 'ARTERIAL': return { pane: 'pane_PDU_ESTRUCTURA_VIAL_2025_5', opacity: 1, color: 'rgba(255,253,38,1.0)', dashArray: '', lineCap: 'round', lineJoin: 'round', weight: 4.0, fillOpacity: 0, interactive: true }
+                case 'COLECTORA': return { pane: 'pane_PDU_ESTRUCTURA_VIAL_2025_5', opacity: 1, color: 'rgba(54,147,210,1.0)', dashArray: '', lineCap: 'round', lineJoin: 'round', weight: 4.0, fillOpacity: 0, interactive: true }
+                case 'LOCAL': return { pane: 'pane_PDU_ESTRUCTURA_VIAL_2025_5', opacity: 1, color: 'rgba(209,228,68,1.0)', dashArray: '', lineCap: 'round', lineJoin: 'round', weight: 1.0, fillOpacity: 0, interactive: true }
+                case 'AUXILIAR': return { pane: 'pane_PDU_ESTRUCTURA_VIAL_2025_5', opacity: 1, color: 'rgba(209,0,0,1.0)', dashArray: '2.0,4.0', lineCap: 'round', lineJoin: 'round', weight: 2.0, fillOpacity: 0, interactive: true }
+                default: return { pane: 'pane_PDU_ESTRUCTURA_VIAL_2025_5', opacity: 1, color: 'rgba(109,224,193,1.0)', dashArray: '', lineCap: 'round', lineJoin: 'round', weight: 1.0, fillOpacity: 0, interactive: true }
+            }
+        }
         map.createPane('pane_PDU_ESTRUCTURA_VIAL_2025_5');
         map.getPane('pane_PDU_ESTRUCTURA_VIAL_2025_5').style.zIndex = 405;
-        var layer_PDU_ESTRUCTURA_VIAL_2025_5 = new L.geoJson(json_PDU_ESTRUCTURA_VIAL_2025_5, { pane: 'pane_PDU_ESTRUCTURA_VIAL_2025_5', style: style_PDU_ESTRUCTURA_VIAL_2025_5_0 });
+        var layer_PDU_ESTRUCTURA_VIAL_2025_5 = new L.geoJson(json_PDU_ESTRUCTURA_VIAL_2025_5, {
+            interactive: true,
+            pane: 'pane_PDU_ESTRUCTURA_VIAL_2025_5',
+            onEachFeature: pop_PDU_ESTRUCTURA_VIAL_2025_5,
+            style: style_PDU_ESTRUCTURA_VIAL_2025_5_0,
+        });
         bounds_group.addLayer(layer_PDU_ESTRUCTURA_VIAL_2025_5);
         map.addLayer(layer_PDU_ESTRUCTURA_VIAL_2025_5);
 
-        function pop_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6(feature, layer) {}
-        function style_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6_0() { return { pane: 'pane_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6', opacity: 1, color: 'rgba(0,0,0,1.0)', weight: 1.0, fillOpacity: 0, interactive: false } }
+        // CAPA 6: LIMITE DISTRITAL
+        function pop_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6(feature, layer) {
+            var popupContent = '<table>\
+                    <tr><td colspan="2">' + (feature.properties['fid'] !== null ? autolinker.link(String(feature.properties['fid']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['OBJECTID_1'] !== null ? autolinker.link(String(feature.properties['OBJECTID_1']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['UBIGEO'] !== null ? autolinker.link(String(feature.properties['UBIGEO']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['CCDD'] !== null ? autolinker.link(String(feature.properties['CCDD']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['CCPP'] !== null ? autolinker.link(String(feature.properties['CCPP']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['CCDI'] !== null ? autolinker.link(String(feature.properties['CCDI']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['DEPARTAMEN'] !== null ? autolinker.link(String(feature.properties['DEPARTAMEN']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['PROVINCIA'] !== null ? autolinker.link(String(feature.properties['PROVINCIA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['DISTRITO'] !== null ? autolinker.link(String(feature.properties['DISTRITO']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['OBJECTID'] !== null ? autolinker.link(String(feature.properties['OBJECTID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['ESRI_OID'] !== null ? autolinker.link(String(feature.properties['ESRI_OID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['Shape_Length'] !== null ? autolinker.link(String(feature.properties['Shape_Length']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                    <tr><td colspan="2">' + (feature.properties['Shape_Area'] !== null ? autolinker.link(String(feature.properties['Shape_Area']).replace(/'/g, '\'').toLocaleString()) : '') + '</td></tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6_0() {
+            return {
+                pane: 'pane_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6',
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: false,
+            }
+        }
         map.createPane('pane_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6');
         map.getPane('pane_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6').style.zIndex = 406;
-        var layer_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6 = new L.geoJson(json_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6, { pane: 'pane_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6', style: style_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6_0 });
+        var layer_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6 = new L.geoJson(json_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6, {
+            interactive: false,
+            pane: 'pane_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6',
+            onEachFeature: pop_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6,
+            style: style_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6_0,
+        });
         bounds_group.addLayer(layer_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6);
         map.addLayer(layer_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6);
         
+        // --- CONTROL DE CAPAS CON LEYENDAS COMPLETAS (RESTAURADO) ---
         var overlaysTree = [
-            {label: 'Límite Distrital', layer: layer_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6},
-            {label: 'Estructura Vial', layer: layer_PDU_ESTRUCTURA_VIAL_2025_5},
-            {label: 'Asociaciones Catastradas', layer: layer_CATASTRO_ASOC_CATASTRADAS_4},
-            {label: 'Zonificación PDU 2026', layer: layer_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3},
-            {label: 'PDU 2025', layer: layer_CATASTRO_MOQUEGUA_2026PDU_2025_S_2},
-            {label: 'Zonificación 2016', layer: layer_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1},
+            {label: '<img src="legend/CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6.png" /> Límite Distrital', layer: layer_CATASTRO_MOQUEGUA_2026mapa_base_limite_distrital_6},
+            {label: 'Estructura Vial<br /><table><tr><td style="text-align: center;"><img src="legend/PDU_ESTRUCTURA_VIAL_2025_5_NACIONAL0.png" /></td><td>NACIONAL</td></tr><tr><td style="text-align: center;"><img src="legend/PDU_ESTRUCTURA_VIAL_2025_5_EXPRESA1.png" /></td><td>EXPRESA</td></tr><tr><td style="text-align: center;"><img src="legend/PDU_ESTRUCTURA_VIAL_2025_5_ARTERIAL2.png" /></td><td>ARTERIAL</td></tr><tr><td style="text-align: center;"><img src="legend/PDU_ESTRUCTURA_VIAL_2025_5_COLECTORA3.png" /></td><td>COLECTORA</td></tr><tr><td style="text-align: center;"><img src="legend/PDU_ESTRUCTURA_VIAL_2025_5_LOCAL4.png" /></td><td>LOCAL</td></tr><tr><td style="text-align: center;"><img src="legend/PDU_ESTRUCTURA_VIAL_2025_5_AUXILIAR5.png" /></td><td>AUXILIAR</td></tr></table>', layer: layer_PDU_ESTRUCTURA_VIAL_2025_5},
+            {label: '<img src="legend/CATASTRO_ASOC_CATASTRADAS_4.png" /> Asociaciones Catastradas', layer: layer_CATASTRO_ASOC_CATASTRADAS_4},
+            {label: 'Zonificación PDU 2026<br /><table><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_E10.png" /></td><td>E1</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_E21.png" /></td><td>E2</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_E32.png" /></td><td>E3</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_H13.png" /></td><td>H1</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_H24.png" /></td><td>H2</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_I15.png" /></td><td>I1</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_I26.png" /></td><td>I2</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_I37.png" /></td><td>I3</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_OU8.png" /></td><td>OU</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_RU9.png" /></td><td>RU</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZA10.png" /></td><td>ZA</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZDAC11.png" /></td><td>ZDA-C</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZDAS12.png" /></td><td>ZDA-S</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZDBS13.png" /></td><td>ZDB-S</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZDMBS14.png" /></td><td>ZDMB-S</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZDMC15.png" /></td><td>ZDM-C</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZDMS16.png" /></td><td>ZDM-S</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZRENU17.png" /></td><td>ZRE-NU</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZREPA18.png" /></td><td>ZRE-PA</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZRERNM19.png" /></td><td>ZRE-RNM</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZRET20.png" /></td><td>ZRE-T</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZRETR21.png" /></td><td>ZRE-TR</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZREZM22.png" /></td><td>ZRE-ZM</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZREZPA23.png" /></td><td>ZRE-ZPA</td></tr><tr><td style="text-align: center;"><img src="legend/MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3_ZRP24.png" /></td><td>ZRP</td></tr></table>', layer: layer_MPMN_PDU_FISICO_ESPACIAL_ZONIFICACION_2026_3},
+            {label: 'PDU 2025<br /><table><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_E10.png" /></td><td>E1</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_E21.png" /></td><td>E2</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_E32.png" /></td><td>E3</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_H13.png" /></td><td>H1</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_H24.png" /></td><td>H2</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_I15.png" /></td><td>I1</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_I26.png" /></td><td>I2</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_I37.png" /></td><td>I3</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_OU8.png" /></td><td>OU</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_RU9.png" /></td><td>RU</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZA10.png" /></td><td>ZA</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZDAC11.png" /></td><td>ZDA-C</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZDAS12.png" /></td><td>ZDA-S</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZDBS13.png" /></td><td>ZDB-S</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZDMBS14.png" /></td><td>ZDMB-S</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZDMC15.png" /></td><td>ZDM-C</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZDMS16.png" /></td><td>ZDM-S</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZRENU17.png" /></td><td>ZRE-NU</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZREPA18.png" /></td><td>ZRE-PA</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZRERNM19.png" /></td><td>ZRE-RNM</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZRET20.png" /></td><td>ZRE-T</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZRETR21.png" /></td><td>ZRE-TR</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZREZM22.png" /></td><td>ZRE-ZM</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZREZPA23.png" /></td><td>ZRE-ZPA</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026PDU_2025_S_2_ZRP24.png" /></td><td>ZRP</td></tr></table>', layer: layer_CATASTRO_MOQUEGUA_2026PDU_2025_S_2},
+            {label: 'Zonificación 2016<br /><table><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ARQUEOLOGICO0.png" /></td><td>ARQUEOLOGICO</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_CE1.png" /></td><td>CE</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_CV2.png" /></td><td>CV</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_CZ3.png" /></td><td>CZ</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_I14.png" /></td><td>I1</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_I1R5.png" /></td><td>I1R</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_I26.png" /></td><td>I2</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_I37.png" /></td><td>I3</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_OU8.png" /></td><td>OU</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_PU9.png" /></td><td>PU</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_RDA10.png" /></td><td>RDA</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_RDB11.png" /></td><td>RDB</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_RDM12.png" /></td><td>RDM</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZZRE0113.png" /></td><td>Z_ZRE-01</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZZRE0214.png" /></td><td>Z_ZRE-02</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZZRE0315.png" /></td><td>Z_ZRE-03</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZZRE0416.png" /></td><td>Z_ZRE-04</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZZRE0517.png" /></td><td>Z_ZRE-05</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZZRE0618.png" /></td><td>Z_ZRE-06</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZZRE0719.png" /></td><td>Z_ZRE-07</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZZRE0820.png" /></td><td>Z_ZRE-08</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZA21.png" /></td><td>ZA</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZPE22.png" /></td><td>ZPE</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZRP23.png" /></td><td>ZRP</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZSPCE24.png" /></td><td>ZSPC_E</td></tr><tr><td style="text-align: center;"><img src="legend/CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1_ZSPCS25.png" /></td><td>ZSPC_S</td></tr></table>', layer: layer_CATASTRO_MOQUEGUA_2026pdu_zonificacion_2016_1},
             {label: "OpenStreetMap Base", layer: layer_OpenStreetMap_Base, radioGroup: 'bm' },
             {label: "Google Satellite", layer: layer_GoogleSatellite_0, radioGroup: 'bm' }
         ];
